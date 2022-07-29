@@ -12,8 +12,6 @@
 | VM in pm2 (display name on Hyper-V Manager) | vm2 |
 | vm1 host name | ws2022-1 |
 | vm2 host nmae | ws2022-2 |
-| IP of vm1     | 172.31.255.101 |
-| IP of vm2     | 172.31.255.102 |
 
 EC runs on vm1 and 2.
 
@@ -58,11 +56,11 @@ echo LOCAL SERVER NAME   : %CLP_SERVER_LOCAL%
 
 if "%CLP_SERVER_DOWN%"=="ws2022-1" (
     echo Turning off vm1
-    powershell "Invoke-Command -ComputerName \"172.31.255.101\" -ScriptBlock {Stop-VM vm1 -TurnOff}"
+    powershell "Invoke-Command -ComputerName \"172.31.255.11\" -ScriptBlock {Stop-VM vm1 -TurnOff}"
 )
 if "%CLP_SERVER_DOWN%"=="ws2022-2" (
     echo Turning off vm2
-    powershell "Invoke-Command -ComputerName \"172.31.255.102\" -ScriptBlock {Stop-VM vm2 -TurnOff}"
+    powershell "Invoke-Command -ComputerName \"172.31.255.12\" -ScriptBlock {Stop-VM vm2 -TurnOff}"
 )
 if "%CLP_SERVER_DOWN%"=="" (
     exit 0
