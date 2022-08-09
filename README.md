@@ -43,31 +43,37 @@ EC runs on vm1 and 2.
    Set-Item WSMan:\localhost\Client\TrustedHosts -Value "172.31.255.11"
    ```
 
-### The sample script for cunstom Force Stop
+### Configuring procedure
 
-```
-rem ***************************************
-rem *            forcestop.bat            *
-rem ***************************************
-echo START
+1. Open WebUI > Config mode > Cluster Properties > 
+2. Account tab > Add > set `administrator` and its password > `OK` >
+3. Fencing tab > `Properties` of Forced Stop > Script tab > click `forcestop.bat` > `Edit` > put the following script with editing vm names and Hyper-V host IP addresses >
 
-echo DOWN SERVER NAME    : %CLP_SERVER_DOWN%
-echo LOCAL SERVER NAME   : %CLP_SERVER_LOCAL%
+   ```
+   rem ***************************************
+   rem *            forcestop.bat            *
+   rem ***************************************
+   echo START
 
-if "%CLP_SERVER_DOWN%"=="ws2022-1" (
-    echo Turning off vm1
-    powershell "Invoke-Command -ComputerName \"172.31.255.11\" -ScriptBlock {Stop-VM vm1 -TurnOff}"
-)
-if "%CLP_SERVER_DOWN%"=="ws2022-2" (
-    echo Turning off vm2
-    powershell "Invoke-Command -ComputerName \"172.31.255.12\" -ScriptBlock {Stop-VM vm2 -TurnOff}"
-)
-if "%CLP_SERVER_DOWN%"=="" (
-    exit 0
-)
+   echo DOWN SERVER NAME    : %CLP_SERVER_DOWN%
+   echo LOCAL SERVER NAME   : %CLP_SERVER_LOCAL%
 
-echo EXIT
-```
+   if "%CLP_SERVER_DOWN%"=="vm1" (
+       echo Turning off vm1
+       powershell "Invoke-Command -ComputerName \"172.31.255.11\" -ScriptBlock {Stop-VM vm1 -TurnOff}"
+   )
+   if "%CLP_SERVER_DOWN%"=="vm2" (
+       echo Turning off vm2
+       powershell "Invoke-Command -ComputerName \"172.31.255.12\" -ScriptBlock {Stop-VM vm2 -TurnOff}"
+   )
+   if "%CLP_SERVER_DOWN%"=="" (
+       exit 0
+   )
+
+   echo EXIT
+   ```
+
+4. `OK` > select `administrator` for `Exec User` > `OK` > `OK`
 
 ---
 2022.07.29 Miyamoto Kazuyuki
