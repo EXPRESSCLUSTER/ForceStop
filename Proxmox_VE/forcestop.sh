@@ -141,7 +141,7 @@ if [ $CLP_FORCESTOP_MODE -eq 0 ]; then
     set_target_vmid $CLP_SERVER_LOCAL
     pve_check_status
 elif [ $CLP_FORCESTOP_MODE -eq 1 ]; then
-    # forcibly stop (or reset) the target node
+    # forcibly stop the target node
     set_target_vmid $CLP_SERVER_DOWN
     pve_vm_stop
 else
