@@ -36,6 +36,7 @@ CLUSTER_NODE2_VMID=<e.g. 102>
 # Constants
 
 JSON_PARSER_COMMAND="python3 -m json.tool"
+FORCESTOP_LOGFILE=/tmp/clpforcestop.log
 
 PVE_RESTAPI_TICKET=/api2/json/access/ticket
 PVE_RESTAPI_QEMU=/api2/json/nodes/$PVE_HOST_NODENAME/qemu
@@ -55,7 +56,8 @@ function set_target_vmid() {
     elif [ $nodename = $CLUSTER_NODE2_NAME ]; then
         TARGET_VMID=$CLUSTER_NODE2_VMID
     else
-        echo "Unknown node name ($nodename)"
+        #echo "Unknown node name ($nodename)" >> $FORCESTOP_LOGFILE
+        :
     fi
 }
 
@@ -71,8 +73,8 @@ function pve_login() {
     PVE_CSRF_TOKEN=`$JSON_PARSER_COMMAND < $PVE_TICKET_TMPFILE \
         | awk '/CSRFPreventionToken/ {gsub(/[,"]/, "", $2); print $2}'`
 
-    #echo "PVE_TICKET:     $PVE_TICKET"
-    #echo "PVE_CSRF_TOKEN: $PVE_CSRF_TOKEN"
+    #echo "PVE_TICKET:     $PVE_TICKET" >> $FORCESTOP_LOGFILE
+    #echo "PVE_CSRF_TOKEN: $PVE_CSRF_TOKEN" >> $FORCESTOP_LOGFILE
 
     rm -f $PVE_TICKET_TMPFILE
 }
@@ -85,10 +87,10 @@ function pve_check_status() {
         | grep "running"
 
     if [ $? -eq 0 ]; then
-        echo "OK"
+        #echo "check: OK" >> $FORCESTOP_LOGFILE
         exit 0
     else
-        echo "NG"
+        #echo "check: NG" >> $FORCESTOP_LOGFILE
         exit 1
     fi
 }
@@ -101,28 +103,32 @@ function pve_vm_stop() {
         | grep "qmstop"
 
     if [ $? -eq 0 ]; then
-        echo "OK"
-        exit 0
+        #echo "vm_stop: OK" >> $FORCESTOP_LOGFILE
+        :
     else
-        echo "NG"
+        #echo "vm_stop: NG" >> $FORCESTOP_LOGFILE
         exit 1
     fi
-}
 
-function pve_vm_reset() {
-    curl -s -X POST -k -b "PVEAuthCookie=$PVE_TICKET" \
-         -H "CSRFPreventionToken: $PVE_CSRF_TOKEN" \
-         https://${PVE_HOST_ENDPOINT}${PVE_RESTAPI_QEMU}/${TARGET_VMID}${PVE_RESTAPI_STATUS_RESET} \
-        | $JSON_PARSER_COMMAND \
-        | grep "qmreset"
+    for i in {1..5}; do
+        curl -s -X GET -k -b "PVEAuthCookie=$PVE_TICKET" \
+             https://${PVE_HOST_ENDPOINT}${PVE_RESTAPI_QEMU}/${TARGET_VMID}${PVE_RESTAPI_STATUS_CURRENT} \
+            | $JSON_PARSER_COMMAND \
+            | awk '/"status"/ {print $2}' \
+            | grep "stopped"
 
-    if [ $? -eq 0 ]; then
-        echo "OK"
-        exit 0
-    else
-        echo "NG"
-        exit 1
-    fi
+        if [ $? -eq 0 ]; then
+            #echo "vm_status: stopped" >> $FORCESTOP_LOGFILE
+            exit 0
+        else
+            #echo "vm_status: not stopped" >> $FORCESTOP_LOGFILE
+            :
+        fi
+        sleep 2
+    done
+
+    #echo "failed to confirm that vm has been stopped" >> $FORCESTOP_LOGFILE
+    exit 1
 }
 
 
@@ -138,8 +144,7 @@ elif [ $CLP_FORCESTOP_MODE -eq 1 ]; then
     # forcibly stop (or reset) the target node
     set_target_vmid $CLP_SERVER_DOWN
     pve_vm_stop
-    #pve_vm_reset
 else
-    echo "Unknown mode ($CLP_FORCESTOP_MODE)"
+    #echo "Unknown mode ($CLP_FORCESTOP_MODE)" >> $FORCESTOP_LOGFILE
     exit 1
 fi
